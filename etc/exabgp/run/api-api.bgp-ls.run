@@ -3,7 +3,8 @@
 import sys
 import time
 import json
-import requests
+from kafka import KafkaProducer
+from kafka.errors import KafkaError
 
 while True:
 	try:
@@ -26,13 +27,15 @@ while True:
 			print('   (ok) api.receive bgp-ls received', line, file = sys.stderr)
 			sys.stdout.flush()
 			try:
-				url = ""
-				req = requests.post(url, json = line)
-				print('bgp-ls java req:', req.json(), file = sys.stderr)
+				bgplsServerIp = '192.168.28.30:9092'
+				topic = 'bgpls'
+				producer = KafkaProducer(bootstrap_servers = bgplsServerIp)
+				producer.send(topic, json.dumps(line).encode())
+			except KafkaError as e:
+				print('kafka send error:', e, file = sys.stderr)
 				sys.stdout.flush()
-			except:
-				print('bgp-ls java req err', file = sys.stderr)
-				sys.stdout.flush()
+			finally:
+				producer.close()
 		else:
 		    print('   (failure) api.receive received unexpected data:', line, file = sys.stderr)
 			sys.stderr.flush()
