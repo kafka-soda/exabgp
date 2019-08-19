@@ -1,35 +1,53 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import time
+import json
+import requests
+#from kafka import KafkaProducer
+#from kafka.errors import KafkaError
 
 while True:
 	try:
 		line = sys.stdin.readline().strip()
-
 		if 'shutdown' in line:
-			print >> sys.stderr, '   (ok) api.receive shutdown received', line
+			print('   (ok) api.receive shutdown received', line, file = sys.stderr)
 			sys.stdout.flush()
 			sys.exit(1)
 		elif 'done' in line:
-			print >> sys.stderr, '   (ok) api.receive done received', line
+			print('   (ok) api.receive done received', line, file = sys.stderr)
 			sys.stdout.flush()
 		elif 'eor' in line:
-			print >> sys.stderr, '   (ok) api.receive eor received', line
+			print('   (ok) api.receive eor received', line, file = sys.stderr)
 			sys.stdout.flush()
 		elif 'keepalive' in line:
-			print >> sys.stderr, '   (ok) api.receive keepalive received', line
+			print('   (ok) api.receive keepalive received', line, file = sys.stderr)
 			sys.stdout.flush()
-		elif '0.0.0.0/32' in line:
-			print >> sys.stderr, '   (ok) api.receive 0.0.0.0/32 received', line
+		elif 'bgp-ls' in line:
+			print('   (ok) api.receive bgp-ls received', line, file = sys.stderr)
 			sys.stdout.flush()
-			time.sleep(2)  # make sure the other process is faster if it gets any data
-			print "announce route 6.6.6.0/24 next-hop 1.1.1.1"
-			sys.stdout.flush()
+#			try:
+#				producer = KafkaProducer(bootstrap_servers = 'localhost:9092')
+#				topic = 'bgpls'
+#				producer.send(topic, line.encode())
+#			except kafkaError as e:
+#				print('   send-error', e, file = sys.stderr)
+#				sys.stdout.flush()
+#			finally:
+#				producer.close()
+			try:
+				url = "http://192.168.28.1:8080/hncmcc/MesInsertIntoDb"
+				headers = {'Content-Type':'application/json'}
+				payload = line
+				req = requests.post(url, headers = headers, data = payload)
+				print('    bgp-lsxxxxxxxxxxxxxxxxxxxxxx', payload, file = sys.stderr)
+				sys.stdout.flush()
+			except:
+				print('   (error) bgp-ls request faile', file = sys.stderr)
+				sys.stdout.flush()
 		else:
-			print >> sys.stderr, '   (failure) api.receive received unexpected data:', line
+			print('   (failure) api.receive received unexpected data:', line, file = sys.stderr)
 			sys.stderr.flush()
-			print "announce route 6.6.6.0/24 next-hop 9.9.9.9"
 			sys.stdout.flush()
 			time.sleep(3)
 			sys.exit(1)
